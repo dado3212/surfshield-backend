@@ -12,7 +12,7 @@
 from flask import Flask
 from flask import request
 from flask import jsonify
-# from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
@@ -31,13 +31,15 @@ requests.packages.urllib3.disable_warnings()
 
 application = Flask(__name__)
 
-DB_NAME = os.environ['RDS_DB_NAME']
-DB_USERNAME = os.environ['RDS_USERNAME']
-DB_PASSWORD = os.environ['RDS_PASSWORD']
-DB_HOSTNAME = os.environ['RDS_HOSTNAME']
-DB_PORT = os.environ['RDS_PORT']
+# DB_NAME = os.environ['RDS_DB_NAME']
+# DB_USERNAME = os.environ['RDS_USERNAME']
+# DB_PASSWORD = os.environ['RDS_PASSWORD']
+# DB_HOSTNAME = os.environ['RDS_HOSTNAME']
+# DB_PORT = os.environ['RDS_PORT']
 
-DB_URI = 'postgres://%s:%s@%s:%s/%s' % (DB_USERNAME, DB_PASSWORD, DB_HOSTNAME, DB_PORT, DB_NAME)
+# DB_URI = 'postgres://%s:%s@%s:%s/%s' % (DB_USERNAME, DB_PASSWORD, DB_HOSTNAME, DB_PORT, DB_NAME)
+
+DB_URI = 'postgres://surfer:surfshield@aapwd1lbq8g2xz.cvbxkvkkboxq.us-east-1.rds.amazonaws.com:5432/ebdb'
 
 application.config['SQLALCHEMY_DATABASE_URI'] = DB_URI
 
@@ -79,6 +81,7 @@ class Vote(db.Model):
     def __init__(self, url, rating):
         self.url = url
         self.rating = rating
+        self.count = 1
 
     def __repr__(self):
         return '<Vote for %s>' % self.url
@@ -177,40 +180,78 @@ def get_rating():
 	if url is None:
 		return "Bad request wahhh"
 
-	# if text is null, grab the html ourselves
-	if text is None:
-		text = textFromUrl(url)
+	rating = Rating.query.filter_by(url=url).first()
+	if rating is None:
+		# if text is null, grab the html ourselves
+		if text is None:
+			text = textFromUrl(url)
 
-	# Send text to the various apis
-	angerScore = process_watson(text)
-	cyberScore = process_bark(text)
+		# Send text to the various apis
+		angerScore = process_watson(text)
+		cyberScore = process_bark(text)
 
-	# Get votes for this url from the DB
-	audienceScore = 3
+		# Get votes for this url from the DB
+		vote = Vote.query.filter_by(url=url).first()
 
-	# Calculate scores based on api return values and vote counts
-	overall = calculateScore(None, angerScore, cyberScore)
+		# Calculate scores based on api return values and vote counts
+		if vote is None:
+			audienceScore = 0
+			overall = calculateScore(None, angerScore, cyberScore)
+		else:
+			audienceScore = vote.rating
+			overall = calculateScore(audienceScore, angerScore, cyberScore)
 
-	# Store scores in the DB
-		# rating = Rating(url, response.anger_score, response.cyberbulling_score, response.profanity_score)
-	# db.session.add(rating)
-	# db.session.commit()
 
-	# Send response
-	response = jsonify(audience=audienceScore, anger = angerScore, cyberbulling = cyberScore[0], profanity = cyberScore[1], overall = overall);
+		# Store scores in the DB
+		rating = Rating(url, angerScore, cyberScore[0], cyberScore[1])
+		db.session.add(rating)
+		db.session.commit()
+
+		# Send response
+		response = jsonify(audience=audienceScore, anger = angerScore, cyberbulling = cyberScore[0], profanity = cyberScore[1], overall = overall)
+	else:
+
+		vote = Vote.query.filter_by(url=url).first()
+
+		# Calculate scores based on api return values and vote counts
+		if vote is None:
+			audienceScore = 3
+			overall = calculateScore(None, rating.anger_score, [rating.cyberbulling_score, rating.profanity_score])
+		else:
+			audienceScore = vote.rating
+			overall = calculateScore(audienceScore, rating.anger_score, [rating.cyberbulling_score, rating.profanity_score])
+
+		response = jsonify(audience=audienceScore, anger = rating.anger_score, cyberbulling = rating.cyberbulling_score, profanity = rating.profanity_score, overall = overall)
 
 	return response
 
 @application.route("/api/v0.1/vote", methods=['POST'])
 def record_vote():
-    data = request.get_json(force=True)
-    url = data['url']
-    vote_score = data['vote_score']
+    # data = request.get_json(force=True)
+    # url = data['url']
+    # vote_score = data['vote_score']
+
+    print(request.form)
+
+    url = request.form.get('url')
+    vote_score = request.form.get('vote')
+
+    print(url)
+    print(vote_score)
 
     # Get the url from the votes list if it exists
+    vote = Vote.query.filter_by(url=url).first()
 
-    # Otherwise create a new vote
+    if vote is None:
+    	new_vote = Vote(url, vote_score)
+    	db.session.add(new_vote)
+    else:
+    	vote.rating = ((vote.rating * vote.count) + int(vote_score)) / (vote.count + 1)
+    	vote.count = vote.count + 1
 
+    db.session.commit()
+
+    return "Success"
 
 if __name__ == "__main__":
     application.run()
