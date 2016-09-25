@@ -62,6 +62,7 @@ class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.Text, unique=True)
     rating = db.Column(db.Float)
+    count = db.Column(db.Integer)
 
     def __init__(self, url, rating):
         self.url = url
@@ -176,7 +177,7 @@ def get_rating():
 	audienceScore = 3
 
 	# Calculate scores based on api return values and vote counts
-	overall = calculateScore(audienceScore, angerScore, cyberScore)
+	overall = calculateScore(None, angerScore, cyberScore)
 
 	# Store scores in the DB
 		# rating = Rating(url, response.anger_score, response.cyberbulling_score, response.profanity_score)
