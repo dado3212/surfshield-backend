@@ -1,0 +1,9 @@
+# Virtual Environment Files
+eb-venv/*
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+.ebextensions/*
