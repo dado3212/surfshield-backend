@@ -12,7 +12,7 @@
 from flask import Flask
 from flask import request
 from flask import jsonify
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 
 from bs4 import BeautifulSoup
 import urllib2, re
@@ -29,7 +29,7 @@ requests.packages.urllib3.disable_warnings()
 application = Flask(__name__)
 application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 
-db = SQLAlchemy(application)
+# db = SQLAlchemy(application)
 
 # To initialiate the DB
 # 
@@ -41,35 +41,35 @@ db = SQLAlchemy(application)
 #                      DATABASE CLASS DEFINITIONS
 #----------------------------------------------------------------
 
-class Rating(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.Text)
+# class Rating(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     url = db.Column(db.Text)
 
-    anger_score = db.Column(db.Float)
-    cyberbulling_score = db.Column(db.Float)
-    profanity_score = db.Column(db.Float)
+#     anger_score = db.Column(db.Float)
+#     cyberbulling_score = db.Column(db.Float)
+#     profanity_score = db.Column(db.Float)
 
-    def __init__(self, url, anger_score, cyberbulling_score, profanity_score):
-        self.url = url
-        self.anger_score = anger_score
-        self.cyberbulling_score = cyberbulling_score
-        self.profanity_score = profanity_score
+#     def __init__(self, url, anger_score, cyberbulling_score, profanity_score):
+#         self.url = url
+#         self.anger_score = anger_score
+#         self.cyberbulling_score = cyberbulling_score
+#         self.profanity_score = profanity_score
 
-    def __repr__(self):
-        return '<Rating for %s>' % self.url
+#     def __repr__(self):
+#         return '<Rating for %s>' % self.url
 
-class Vote(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.Text, unique=True)
-    rating = db.Column(db.Float)
-    count = db.Column(db.Integer)
+# class Vote(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     url = db.Column(db.Text, unique=True)
+#     rating = db.Column(db.Float)
+#     count = db.Column(db.Integer)
 
-    def __init__(self, url, rating):
-        self.url = url
-        self.rating = rating
+#     def __init__(self, url, rating):
+#         self.url = url
+#         self.rating = rating
 
-    def __repr__(self):
-        return '<Vote for %s>' % self.url
+#     def __repr__(self):
+#         return '<Vote for %s>' % self.url
 
 #----------------------------------------------------------------
 #                         HELPER FUNCTIONS
