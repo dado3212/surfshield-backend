@@ -208,7 +208,7 @@ def get_rating():
 		db.session.commit()
 
 		# Send response
-		response = jsonify(audience=audienceScore, anger = angerScore, cyberbulling = cyberScore[0], profanity = cyberScore[1], overall = overall)
+		response = jsonify(audience=audienceScore, anger = angerScore, cyberbullying = cyberScore[0], profanity = cyberScore[1], overall = overall)
 	else:
 
 		vote = Vote.query.filter_by(url=url).first()
@@ -221,7 +221,7 @@ def get_rating():
 			audienceScore = vote.rating
 			overall = calculateScore(audienceScore, rating.anger_score, [rating.cyberbulling_score, rating.profanity_score])
 
-		response = jsonify(audience=audienceScore, anger = rating.anger_score, cyberbulling = rating.cyberbulling_score, profanity = rating.profanity_score, overall = overall)
+		response = jsonify(audience=audienceScore, anger = rating.anger_score, cyberbullying = rating.cyberbulling_score, profanity = rating.profanity_score, overall = overall)
 
 	return response
 
