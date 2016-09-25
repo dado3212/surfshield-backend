@@ -18,6 +18,8 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import re
 
+import os
+
 import json
 from watson_developer_cloud import ToneAnalyzerV3
 import requests
@@ -28,9 +30,18 @@ requests.packages.urllib3.disable_warnings()
 #----------------------------------------------------------------
 
 application = Flask(__name__)
-application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 
-# db = SQLAlchemy(application)
+DB_NAME = os.environ['RDS_DB_NAME']
+DB_USERNAME = os.environ['RDS_USERNAME']
+DB_PASSWORD = os.environ['RDS_PASSWORD']
+DB_HOSTNAME = os.environ['RDS_HOSTNAME']
+DB_PORT = os.environ['RDS_PORT']
+
+DB_URI = 'postgres://%s:%s@%s:%s/%s' % (DB_USERNAME, DB_PASSWORD, DB_HOSTNAME, DB_PORT, DB_NAME)
+
+application.config['SQLALCHEMY_DATABASE_URI'] = DB_URI
+
+db = SQLAlchemy(application)
 
 # To initialiate the DB
 # 
@@ -42,35 +53,35 @@ application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 #                      DATABASE CLASS DEFINITIONS
 #----------------------------------------------------------------
 
-# class Rating(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     url = db.Column(db.Text)
+class Rating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.Text)
 
-#     anger_score = db.Column(db.Float)
-#     cyberbulling_score = db.Column(db.Float)
-#     profanity_score = db.Column(db.Float)
+    anger_score = db.Column(db.Float)
+    cyberbulling_score = db.Column(db.Float)
+    profanity_score = db.Column(db.Float)
 
-#     def __init__(self, url, anger_score, cyberbulling_score, profanity_score):
-#         self.url = url
-#         self.anger_score = anger_score
-#         self.cyberbulling_score = cyberbulling_score
-#         self.profanity_score = profanity_score
+    def __init__(self, url, anger_score, cyberbulling_score, profanity_score):
+        self.url = url
+        self.anger_score = anger_score
+        self.cyberbulling_score = cyberbulling_score
+        self.profanity_score = profanity_score
 
-#     def __repr__(self):
-#         return '<Rating for %s>' % self.url
+    def __repr__(self):
+        return '<Rating for %s>' % self.url
 
-# class Vote(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     url = db.Column(db.Text, unique=True)
-#     rating = db.Column(db.Float)
-#     count = db.Column(db.Integer)
+class Vote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.Text, unique=True)
+    rating = db.Column(db.Float)
+    count = db.Column(db.Integer)
 
-#     def __init__(self, url, rating):
-#         self.url = url
-#         self.rating = rating
+    def __init__(self, url, rating):
+        self.url = url
+        self.rating = rating
 
-#     def __repr__(self):
-#         return '<Vote for %s>' % self.url
+    def __repr__(self):
+        return '<Vote for %s>' % self.url
 
 #----------------------------------------------------------------
 #                         HELPER FUNCTIONS
@@ -139,7 +150,7 @@ def process_bark(text):
 def calculateScore(audienceScore, angerScore, cyberScore):
 	cyberBullying = cyberScore[0]
 	profanity = cyberScore[1]
-	angerScore = round(angerScore*5,1)
+	angerScore = round((angerScore*4) + 1,1)
 	averageScore = 0
 
 	if (audienceScore is None):
