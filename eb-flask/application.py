@@ -15,7 +15,8 @@ from flask import jsonify
 # from flask_sqlalchemy import SQLAlchemy
 
 from bs4 import BeautifulSoup
-import urllib2, re
+from urllib.request import urlopen
+import re
 
 import json
 from watson_developer_cloud import ToneAnalyzerV3
@@ -77,7 +78,7 @@ application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 
 def textFromUrl(url):
 	# soup = BeautifulSoup(html_doc, 'html.parser')
-	html = urllib2.urlopen(urllib2.Request(url)).read()
+	html = urlopen(url)
 	html = re.sub(r'<script type="text/javascript">[\s\S]*?</script>', '', html)
 	html = re.sub(r'<a.*?>(.*?)</a>', r'\1 ', html)
 
